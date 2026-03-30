@@ -2,16 +2,9 @@
 
 import os
 import time
-from utils import get_neighbors
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
-
-def apply_action(state, action):
-    for neighbor, act in get_neighbors(state):
-        if act == action:
-            return neighbor
-    return state
 
 def print_side_by_side(states, titles, info_lines, mem_lines):
     N = int(len(states[0]) ** 0.5)
@@ -20,7 +13,7 @@ def print_side_by_side(states, titles, info_lines, mem_lines):
     spacing = 4
     col_width = board_width + spacing
 
-    # Print titles and stats dynamically centered over the correct board width
+    # Print titles and stats dynamically centered
     print("".join(f"{title:^{col_width}}" for title in titles))
     
     # Dynamic top border
@@ -56,25 +49,31 @@ def print_side_by_side(states, titles, info_lines, mem_lines):
 
 def visualize_simultaneous(start_state, results):
     names = [res['name'] for res in results]
-    paths = [res['path'] if res['path'] else [] for res in results]
+    # We now pull the SEARCH HISTORY instead of the PATH
+    histories = [res.get('search_history', []) for res in results]
     
-    max_steps = max(len(p) for p in paths) if paths else 0
-    current_states = [start_state] * len(results)
+    # Find the longest search history
+    max_steps = max(len(h) for h in histories) if histories else 0
     
-    for step in range(max_steps + 1):
+    for step in range(max_steps):
         clear_screen()
-        grid_type = f"{int(len(start_state)**0.5)}x{int(len(start_state)**0.5)}"
-        print(f"=== L3: Simultaneous {grid_type} Path Execution (Step {step}/{max_steps}) ===\n")
+        N = int(len(start_state)**0.5)
+        grid_type = f"{N}x{N}"
+        print(f"=== Simultaneous {grid_type} Search Process (Frame {step + 1}/{max_steps}) ===\n")
         
         node_lines = [f"Nodes: {res['nodes']}" for res in results]
         mem_lines = [f"Mem: {res['max_mem']}" for res in results]
         
+        current_states = []
+        for i in range(len(results)):
+            # Show active searching if the algorithm hasn't finished
+            if step < len(histories[i]):
+                current_states.append(histories[i][step])
+            # Freeze on the goal state if the algorithm finished early
+            else:
+                current_states.append(histories[i][-1])
+                
         print_side_by_side(current_states, names, node_lines, mem_lines)
         
-        time.sleep(0.6)
-        
-        if step < max_steps:
-            for i in range(len(results)):
-                if step < len(paths[i]):
-                    action = paths[i][step]
-                    current_states[i] = apply_action(current_states[i], action)
+        # Fast animation speed (adjust this up or down to your liking)
+        time.sleep(0.5)
