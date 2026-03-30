@@ -12,38 +12,33 @@ def get_neighbors(state):
     neighbors = []
     idx = state.index(0)
     row, col = divmod(idx, GRID_SIZE)
-    moves = {'U': (-1, 0), 'D': (1, 0), 'L': (0, -1), 'R': (0, 1)}
+    moves = {'U':(-1, 0),'D': (1, 0),'L':(0, -1),'R': (0, 1)}
     
     for action, (dr, dc) in moves.items():
         new_row, new_col = row + dr, col + dc
-        if 0 <= new_row < GRID_SIZE and 0 <= new_col < GRID_SIZE:
-            new_idx = new_row * GRID_SIZE + new_col
+        if 0 <= new_row< GRID_SIZE and 0<= new_col < GRID_SIZE:
+            new_idx = new_row*GRID_SIZE + new_col
             new_state = list(state)
             new_state[idx], new_state[new_idx] = new_state[new_idx], new_state[idx]
             neighbors.append((tuple(new_state), action))
     return neighbors
-
-# --- 2. Heuristic Functions ---
 def h1_misplaced_tiles(state):
-    return sum(1 for i in range(8) if state[i] != GOAL_STATE[i] and state[i] != 0)
-
+    return sum(1 for i in range(8) if state[i]!= GOAL_STATE[i] and state[i] != 0)
 def h2_manhattan_distance(state):
     distance = 0
     for i in range(9):
-        if state[i] == 0: continue
+        if state[i] == 0:continue
         curr_row, curr_col = divmod(i, GRID_SIZE)
-        goal_row, goal_col = divmod(state[i] - 1, GRID_SIZE)
-        distance += abs(curr_row - goal_row) + abs(curr_col - goal_col)
+        goal_row, goal_col = divmod(state[i]-1, GRID_SIZE)
+        distance+= abs(curr_row - goal_row) +abs(curr_col - goal_col)
     return distance
-
-# --- 3. Search Algorithms ---
 def bfs(start_state):
     queue = deque([(start_state, [])])
     visited = {start_state}
-    nodes = 0
+    nodes =0
     while queue:
-        state, path = queue.popleft()
-        if state == GOAL_STATE: return path, nodes
+        state,path = queue.popleft()
+        if state ==GOAL_STATE: return path, nodes
         nodes += 1
         for next_state, action in get_neighbors(state):
             if next_state not in visited:
@@ -54,7 +49,7 @@ def bfs(start_state):
 def iddfs(start_state, max_depth=50):
     def dls(state, path, depth_limit, visited):
         nonlocal nodes
-        if state == GOAL_STATE: return path
+        if state == GOAL_STATE:return path
         if depth_limit == 0: return "CUTOFF"
         nodes += 1
         cutoff_occurred = False
@@ -69,7 +64,7 @@ def iddfs(start_state, max_depth=50):
 
     nodes = 0
     for depth in range(max_depth):
-        visited = {start_state}
+        visited ={start_state}
         result = dls(start_state, [], depth, visited)
         if result not in ("CUTOFF", None): return result, nodes
     return None, nodes
@@ -96,7 +91,7 @@ def ida_star(start_state, heuristic_func):
         state = path[-1][0]
         f = g + heuristic_func(state)
         if f > threshold: return f
-        if state == GOAL_STATE: return "FOUND"
+        if state ==GOAL_STATE: return "FOUND"
         nodes += 1
         min_threshold = float('inf')
         for next_state, action in get_neighbors(state):
@@ -104,7 +99,7 @@ def ida_star(start_state, heuristic_func):
                 path.append((next_state, action))
                 temp = search(path, g + 1, threshold)
                 if temp == "FOUND": return "FOUND"
-                if temp < min_threshold: min_threshold = temp
+                if temp<min_threshold: min_threshold = temp
                 path.pop()
         return min_threshold
 
@@ -113,23 +108,19 @@ def ida_star(start_state, heuristic_func):
     nodes = 0
     while True:
         temp = search(path, 0, threshold)
-        if temp == "FOUND": return [p[1] for p in path[1:]], nodes
+        if temp =="FOUND": return [p[1] for p in path[1:]],nodes
         if temp == float('inf'): return None, nodes
         threshold = temp
-
-# --- 4. File I/O & Visualization Engine ---
 def read_board_from_file(filename):
-    """Reads a 3x3 grid from a text file and converts it to a 1D tuple."""
     try:
         with open(filename, 'r') as f:
-            # Read all numbers, ignoring newlines and extra spaces
             numbers = [int(x) for line in f.readlines() for x in line.split()]
             if len(numbers) != 9:
-                print(f"Error: {filename} must contain exactly 9 numbers.")
+                print(f"Error:{filename} must contain exactly 9 numbers.")
                 return None
             return tuple(numbers)
     except FileNotFoundError:
-        print(f"Error: Could not find '{filename}'. Make sure it is in the same folder.")
+        print(f"Error:Could not find '{filename}'. Make sure it is in the same folder.")
         return None
 
 def clear_screen():
