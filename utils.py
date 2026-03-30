@@ -1,47 +1,67 @@
 # utils.py
 
-GOAL_STATE = (1, 2, 3, 4, 5, 6, 7, 8, 0)
-GRID_SIZE = 3
+def read_board_from_file(filename):
+    with open(filename, 'r') as f:
+        # Reads all numbers, ignoring line breaks, so it works for 3x3 or 4x4
+        numbers = []
+        for line in f:
+            numbers.extend([int(x) for x in line.split() if x.strip()])
+    return tuple(numbers)
+
+def is_goal(state):
+    # Dynamically generates the goal based on board length
+    # e.g., (1, 2, ..., 8, 0) or (1, 2, ..., 15, 0)
+    goal = tuple(range(1, len(state))) + (0,)
+    return state == goal
 
 def get_neighbors(state):
-    neighbors = []
-    idx = state.index(0)
-    row, col = divmod(idx, GRID_SIZE)
-    moves = {'U': (-1, 0), 'D': (1, 0), 'L': (0, -1), 'R': (0, 1)}
+    # Dynamically calculates grid width (N)
+    N = int(len(state) ** 0.5) 
+    empty_idx = state.index(0)
+    row, col = divmod(empty_idx, N)
     
-    for action, (dr, dc) in moves.items():
-        new_row, new_col = row + dr, col + dc
-        if 0 <= new_row < GRID_SIZE and 0 <= new_col < GRID_SIZE:
-            new_idx = new_row * GRID_SIZE + new_col
+    neighbors = []
+    directions = {
+        'Up': (row - 1, col),
+        'Down': (row + 1, col),
+        'Left': (row, col - 1),
+        'Right': (row, col + 1)
+    }
+    
+    for action, (r, c) in directions.items():
+        if 0 <= r < N and 0 <= c < N:
+            new_idx = r * N + c
             new_state = list(state)
-            new_state[idx], new_state[new_idx] = new_state[new_idx], new_state[idx]
+            # Swap the empty tile with the target tile
+            new_state[empty_idx], new_state[new_idx] = new_state[new_idx], new_state[empty_idx]
             neighbors.append((tuple(new_state), action))
+            
     return neighbors
 
-def read_board_from_file(filename):
-    try:
-        with open(filename, 'r') as f:
-            numbers = [int(x) for line in f.readlines() for x in line.split()]
-            if len(numbers) != 9:
-                print(f"Error: {filename} must contain exactly 9 numbers.")
-                return None
-            return tuple(numbers)
-    except FileNotFoundError:
-        print(f"Error: Could not find '{filename}'. Make sure it is in the same folder.")
-        return None
-    
 def is_solvable(state):
-    """
-    Checks if an 8-puzzle board is mathematically solvable by counting inversions.
-    An odd number of inversions means it's impossible.
-    """
+    N = int(len(state) ** 0.5)
+    state_no_zero = [x for x in state if x != 0]
     inversions = 0
-    # Remove the 0 (blank tile) for the math
-    tiles = [t for t in state if t != 0]
     
-    for i in range(len(tiles)):
-        for j in range(i + 1, len(tiles)):
-            if tiles[i] > tiles[j]:
+    # Count inversions
+    for i in range(len(state_no_zero)):
+        for j in range(i + 1, len(state_no_zero)):
+            if state_no_zero[i] > state_no_zero[j]:
                 inversions += 1
                 
-    return inversions % 2 == 0
+    # Level 2: Odd grid (3x3 8-puzzle) rule
+    if N % 2 != 0:
+        return inversions % 2 == 0
+        
+    # Level 3: Even grid (4x4 15-puzzle) rule
+    else:
+        empty_idx = state.index(0)
+        blank_row_from_top = empty_idx // N
+        blank_row_from_bottom = N - blank_row_from_top
+        
+        # If blank is on an even row from bottom, inversions must be odd
+        if blank_row_from_bottom % 2 == 0:
+            return inversions % 2 != 0
+        # If blank is on an odd row from bottom, inversions must be even
+        else:
+            return inversions % 2 == 0

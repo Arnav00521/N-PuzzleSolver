@@ -2,7 +2,7 @@
 
 import heapq
 from collections import deque
-from utils import GOAL_STATE, get_neighbors
+from utils import is_goal, get_neighbors
 
 def bfs(start_state):
     queue = deque([(start_state, [])])
@@ -15,7 +15,7 @@ def bfs(start_state):
         max_memory = max(max_memory, len(queue) + len(visited))
         
         state, path = queue.popleft()
-        if state == GOAL_STATE: return path, nodes, max_memory
+        if is_goal(state): return path, nodes, max_memory
         nodes += 1
         for next_state, action in get_neighbors(state):
             if next_state not in visited:
@@ -29,7 +29,7 @@ def iddfs(start_state, max_depth=50):
         # Track peak memory (current recursion depth / path length)
         max_memory = max(max_memory, len(path))
         
-        if state == GOAL_STATE: return path
+        if is_goal(state): return path
         if depth_limit == 0: return "CUTOFF"
         nodes += 1
         cutoff_occurred = False
@@ -62,7 +62,7 @@ def a_star(start_state, heuristic_func):
         max_memory = max(max_memory, len(pq) + len(visited))
         
         f, _, g, state, path = heapq.heappop(pq)
-        if state == GOAL_STATE: return path, nodes, max_memory
+        if is_goal(state): return path, nodes, max_memory
         nodes += 1
         for next_state, action in get_neighbors(state):
             new_g = g + 1
@@ -80,7 +80,7 @@ def ida_star(start_state, heuristic_func):
         state = path[-1][0]
         f = g + heuristic_func(state)
         if f > threshold: return f
-        if state == GOAL_STATE: return "FOUND"
+        if is_goal(state): return "FOUND"
         nodes += 1
         min_threshold = float('inf')
         for next_state, action in get_neighbors(state):

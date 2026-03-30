@@ -14,10 +14,11 @@ if __name__ == "__main__":
     print("2. Medium (input2.txt)")
     print("3. Hard   (input3.txt)")
     print("4. Unsolvable")
+    print("5. 15-Puzzle")
     
-    choice = input("\nEnter 1, 2, 3, or 4: ").strip()
+    choice = input("\nEnter 1, 2, 3, 4, or 5: ").strip()
     
-    file_map = {'1': 'input1.txt', '2': 'input2.txt', '3': 'input3.txt', '4': 'input4.txt'}
+    file_map = {'1': 'input1.txt', '2': 'input2.txt', '3': 'input3.txt', '4': 'input4.txt', '5': 'input_15.txt'}
     
     if choice not in file_map:
         print("Invalid choice. Exiting.")

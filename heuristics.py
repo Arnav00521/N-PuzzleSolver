@@ -1,47 +1,60 @@
 # heuristics.py
 
-from utils import GOAL_STATE, GRID_SIZE
-
 def h1_misplaced_tiles(state):
-    return sum(1 for i in range(8) if state[i] != GOAL_STATE[i] and state[i] != 0)
+    misplaced = 0
+    # The goal state has tile 'val' at index 'val - 1'
+    for i, val in enumerate(state):
+        if val != 0 and val != i + 1:
+            misplaced += 1
+    return misplaced
 
 def h2_manhattan_distance(state):
+    N = int(len(state) ** 0.5)
     distance = 0
-    for i in range(9):
-        if state[i] == 0: continue
-        curr_row, curr_col = divmod(i, GRID_SIZE)
-        goal_row, goal_col = divmod(state[i] - 1, GRID_SIZE)
-        distance += abs(curr_row - goal_row) + abs(curr_col - goal_col)
+    for i, val in enumerate(state):
+        if val != 0:
+            # Where the tile SHOULD be
+            target_r = (val - 1) // N
+            target_c = (val - 1) % N
+            # Where the tile IS currently
+            current_r = i // N
+            current_c = i % N
+            
+            distance += abs(target_r - current_r) + abs(target_c - current_c)
     return distance
 
 def h3_linear_conflict(state):
-    conflict_count = 0
+    N = int(len(state) ** 0.5)
+    conflict = 0
     
-    # 1. Check Rows for conflicts
-    for row in range(3):
-        row_tiles = [state[row*3 + col] for col in range(3)]
-        for i in range(3):
-            for j in range(i + 1, 3):
-                t1, t2 = row_tiles[i], row_tiles[j]
-                if t1 != 0 and t2 != 0:
-                    # Are they both supposed to be in this specific row?
-                    if (t1 - 1) // 3 == row and (t2 - 1) // 3 == row:
-                        # Are they in the wrong order?
-                        if t1 > t2:
-                            conflict_count += 1
+    # Check for Row Conflicts
+    for row in range(N):
+        current_row = [state[row * N + c] for c in range(N)]
+        for i in range(N):
+            val_i = current_row[i]
+            # Check if val_i belongs in this row
+            if val_i != 0 and (val_i - 1) // N == row:
+                for j in range(i + 1, N):
+                    val_j = current_row[j]
+                    # Check if val_j ALSO belongs in this row
+                    if val_j != 0 and (val_j - 1) // N == row:
+                        # If a bigger number is to the left of a smaller number, they must step over each other
+                        if val_i > val_j:
+                            conflict += 2
 
-    # 2. Check Columns for conflicts
-    for col in range(3):
-        col_tiles = [state[row*3 + col] for row in range(3)]
-        for i in range(3):
-            for j in range(i + 1, 3):
-                t1, t2 = col_tiles[i], col_tiles[j]
-                if t1 != 0 and t2 != 0:
-                    # Are they both supposed to be in this specific column?
-                    if (t1 - 1) % 3 == col and (t2 - 1) % 3 == col:
-                        # Are they in the wrong order?
-                        if t1 > t2:
-                            conflict_count += 1
+    # Check for Column Conflicts
+    for col in range(N):
+        current_col = [state[r * N + col] for r in range(N)]
+        for i in range(N):
+            val_i = current_col[i]
+            # Check if val_i belongs in this column
+            if val_i != 0 and (val_i - 1) % N == col:
+                for j in range(i + 1, N):
+                    val_j = current_col[j]
+                    # Check if val_j ALSO belongs in this column
+                    if val_j != 0 and (val_j - 1) % N == col:
+                        if val_i > val_j:
+                            conflict += 2
 
-    # Total = Base Manhattan + (2 * Number of conflicts)
-    return h2_manhattan_distance(state) + (2 * conflict_count)
+    # Linear Conflict is always added to the base Manhattan Distance
+    return h2_manhattan_distance(state) + conflict
